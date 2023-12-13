@@ -104,7 +104,7 @@ int main(void)
 	while (1)
 	{
 		if (isatty(0))
-		print_string("$ ");
+		print_string("($) ");
 
 		chars_read = getline(&input, &input_size, stdin);
 		if (chars_read < 0)
