@@ -12,5 +12,6 @@ void custom_tokenize(char *input, char *args[]);
 void execute_command(char *args[]);
 void execute_directly(char *command, char *args[]);
 void execute_with_fork(char *command, char *args[]);
+void execute_in_path(char *command, char *args[]);
 
 #endif

@@ -116,8 +116,7 @@ void execute_command(char *args[])
 	}
 	else
 	{
-		printf("bu");
-		/*execute_in_path(args[0], args);*/
+		execute_in_path(args[0], args);
 	}
 }
 
@@ -170,4 +169,56 @@ void execute_with_fork(char *command, char *args[])
 			exit(EXIT_FAILURE);
 		}
 	}
+}
+
+/**
+ * execute_in_path - For builtins append to array of PATH values
+ *
+ * @command: command to execute
+ * @args: array of commands and probably flags
+ *
+ * Return: Always 0.
+ */
+void execute_in_path(char *command, char *args[])
+{
+	char *path_env = getenv("PATH");
+	char *path_copy;
+	char *token;
+
+	if (path_env == NULL)
+	{
+		fprintf(stderr, "%s: %s: not found\n", command, args[0]);
+		exit(EXIT_FAILURE);
+	}
+
+	path_copy = strdup(path_env);
+
+	if (path_copy == NULL)
+	{
+		perror(command);
+		exit(EXIT_FAILURE);
+	}
+
+	token = strtok(path_copy, ":");
+
+	while (token != NULL)
+	{
+		char full_path[MAX_INPUT_SIZE];
+
+		snprintf(full_path, sizeof(full_path), "%s/%s", token, command);
+
+		if (access(full_path, X_OK) == 0)
+		{
+			execute_with_fork(full_path, args);
+			free(path_copy);
+			return;
+		}
+
+		token = strtok(NULL, ":");
+	}
+
+	/* command not found */
+	fprintf(stderr, "%s: %s: not found\n", command, args[0]);
+	free(path_copy);
+	exit(EXIT_FAILURE);
 }
