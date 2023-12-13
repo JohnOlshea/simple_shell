@@ -21,7 +21,11 @@ int main(void)
 	while (1)
 	{
 		if (isatty(0))
-		print_string("($) ");
+		{
+			write(STDOUT_FILENO, "($) ", 4);
+			fflush(stdout);
+			/*print_string("($) ");*/
+		}
 
 		chars_read = getline(&input, &input_size, stdin);
 		if (chars_read < 0)
@@ -59,6 +63,34 @@ int main(void)
 			/* Check for the env built-in command */
 			if (strcmp(args[0], "env") == 0)
 				print_environment();
+			/* Check for the setenv built-in command */
+			else if (strcmp(args[0], "setenv") == 0)
+			{
+				if (args[1] != NULL && args[2] != NULL)
+					set_environment_variable(args[1], args[2]);
+				else
+				{
+					char error_message[] = "Usage: setenv VARIABLE VALUE\n";
+
+					write(STDERR_FILENO, error_message, sizeof(error_message) - 1);
+				}
+			}
+			/* Check for the unsetenv built-in command */
+			else if (strcmp(args[0], "unsetenv") == 0)
+			{
+				if (args[1] != NULL)
+					unset_environment_variable(args[1]);
+				else
+				{
+					char error_message[] = "Usage: unsetenv VARIABLE\n";
+
+					write(STDERR_FILENO, error_message, sizeof(error_message) - 1);
+				}
+			}
+			else if (strcmp(args[0], "cd") == 0)
+			{
+				change_directory(args[1]);
+			}
 			else
 				execute_command(args);
 		}
@@ -69,12 +101,74 @@ int main(void)
 }
 
 /**
- * execute_with_fork - Execute a command with fork, execve, and wait
- * @command: x
- * @args: x
+ * change_directory - change directory
+ *
+ * @directory: directory to change into
+ *
+ * Return: Always 0.
+ */
+void change_directory(char *directory)
+{
+	if (directory == NULL || strcmp(directory, "-") == 0)
+	{
+		directory = getenv("HOME");
+
+		if (directory == NULL)
+		{
+			print_string_err("Error: HOME environment variable not set\n");
+			return;
+		}
+	}
+
+	if (chdir(directory) == -1)
+	{
+		perror("chdir");
+		print_string_err("Failed to change dirctor to ");
+		print_string_err(directory);
+	}
+}
+
+/**
+ * set_environment_variable - Set environment variable
+ *
+ * @variable: varaible name
+ * @value: value to set
  *
  */
-void execute_with_fork(char *command, char *args[])
+void set_environment_variable(char *variable, char *value)
+{
+	if (setenv(variable, value, 1) == -1)
+	{
+		perror("setenv");
+		print_string_err("Failed to set environment variable ");
+		print_string_err(variable);
+		print_string_err("\n");
+	}
+}
+
+/**
+ * unset_environment_variable - remove environment
+ *
+ * @variable: varaible name
+ */
+void unset_environment_variable(char *variable)
+{
+	if (unsetenv(variable) == -1)
+	{
+		perror("unsetenv");
+		print_string_err("Failed to unset environment variable ");
+		print_string_err(variable);
+		print_string_err("\n");
+	}
+}
+
+/**
+ * execute_with_fork - Execute a command with fork, execve, and wait
+ *
+ * @command: x
+ * @args: x
+ */
+int execute_with_fork(char *command, char *args[])
 {
 	int status;
 	pid_t pid = fork();
@@ -90,13 +184,14 @@ void execute_with_fork(char *command, char *args[])
 		{
 			if (!isatty(0))
 			{
-				print_string("./hsh: 1: ");
-				print_string(command);
-				print_string(": not found\n");
+				print_string_err("./hsh: 1: ");
+				print_string_err(command);
+				print_string_err(": not found\n");
 				exit(127);
 			}
 			perror(command);
-			exit(EXIT_FAILURE);
+			print_string("./hsh: No such file or directorya\n");
+			return (127);
 		}
 	}
 	else
@@ -104,6 +199,8 @@ void execute_with_fork(char *command, char *args[])
 		if (wait(&status) == -1)
 			exit(EXIT_FAILURE);
 	}
+
+	return (0);
 }
 
 /**
@@ -128,7 +225,7 @@ void print_environment(void)
  * @command: command to execute
  * @args: array or argument and flags
  */
-void execute_in_path(char *command, char *args[])
+int execute_in_path(char *command, char *args[])
 {
 	char *path_env = getenv("PATH");
 	char full_path[MAX_INPUT_SIZE];
@@ -141,7 +238,8 @@ void execute_in_path(char *command, char *args[])
 		print_string(": ");
 		print_string(args[0]);
 		print_string(": not found\n");
-		exit(EXIT_FAILURE);
+		/*exit(EXIT_FAILURE);*/
+		return (127);
 	}
 
 	path_copy = strdup(path_env);
@@ -162,18 +260,22 @@ void execute_in_path(char *command, char *args[])
 		{
 			execute_with_fork(full_path, args);
 			free(path_copy);
-			return;
+			return (0);
 		}
 
 		token = strtok(NULL, ":");
 	}
 
+	/*
 	print_string(command);
 	print_string(": ");
 	print_string(args[0]);
 	print_string(": not found\n");
 	free(path_copy);
-	exit(EXIT_FAILURE);
+	*/
+
+	/*exit(EXIT_FAILURE);*/
+	return (98);
 }
 
 /**
@@ -254,4 +356,34 @@ void tokenize_input(char *input, char *args[])
 		token = strtok(NULL, " \n");
 	}
 	args[arg_count] = NULL;
+}
+
+/**
+ * _putchar_err - writes the character c to stderr
+ * @c: The character to print
+ *
+ * Return: On success 1.
+ * On error, -1 is returned, and errno is set appropriately.
+ */
+int _putchar_err(char c)
+{
+	return (write(2, &c, 1));
+}
+
+/**
+ * print_string_err - writes string to stderr
+ * @str: The string to print
+ *
+ * Return: On success 1.
+ * On error, -1 is returned, and errno is set appropriately.
+ */
+int print_string_err(char *str)
+{
+	int i = 0, count = 0;
+
+	while (str[i])
+	{
+		count += _putchar_err(str[i++]);
+	}
+	return (count);
 }

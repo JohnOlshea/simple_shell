@@ -15,9 +15,13 @@ extern char** environ;
 int _putchar(char c);
 int print_string(char *str);
 void execute_command(char *args[]);
+int execute_in_path(char *command, char *args[]);
 void tokenize_input(char *input, char *args[]);
-
-
+void set_environment_variable(char *variable, char *value);
+void unset_environment_variable(char *variable);
 void print_environment(void);
+int _putchar_err(char c);
+int print_string_err(char *str);
+void change_directory(char *directory);
 
 #endif
