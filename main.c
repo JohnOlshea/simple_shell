@@ -212,13 +212,13 @@ int execute_in_path(char *command, char *args[])
 		/* Build full path */
 		strcpy(full_path, token);
 		strcat(full_path, "/");
-		strcat(full_path, command);		
+		strcat(full_path, command);
 
 		if (access(full_path, X_OK) == 0)
 		{
 			execute_with_fork(full_path, args);
 			free(path_copy);
-			return(0);
+			return (0);
 		}
 
 		token = strtok(NULL, ":");
