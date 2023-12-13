@@ -39,6 +39,11 @@ int main(void)
 		if (input[chars_read - 1] == '\n')
 			input[chars_read - 1] = '\0';
 
+		/* Ignore comments (lines starting with '#') */
+		if (input[0] == '#') {
+			continue;
+		}
+
 		tokenize_input(input, args);
 
 		if (args[0] != NULL)
@@ -249,7 +254,7 @@ int execute_in_path(char *command, char *args[])
 		exit(EXIT_FAILURE);
 	}
 
-	token = strtok(path_copy, ":");
+	token = _strtok(path_copy, ":");
 	while (token != NULL)
 	{
 		strcpy(full_path, token);
@@ -263,7 +268,7 @@ int execute_in_path(char *command, char *args[])
 			return (0);
 		}
 
-		token = strtok(NULL, ":");
+		token = _strtok(NULL, ":");
 	}
 
 	/*
@@ -344,16 +349,59 @@ int print_string(char *str)
  *
  * Return: Always 0.
  */
+char *_strtok(char *s, const char *delim)
+{
+    static char *olds;
+    char *token;
+
+    if (s == NULL)
+        s = olds;
+
+    /* Scan leading delimiters.  */
+    s += strspn(s, delim);
+
+    /* if *s points to the null byte \0, that means
+        we have reached the end of the string and
+        we return NULL
+    */
+    if (*s == '\0')
+    {
+        olds = s;
+        return (NULL);
+    }
+
+    /* Find the end of the token.  */
+    token = s;
+    s = strpbrk(token, delim);
+    if (s == NULL)
+        /* This token finishes the string.  */
+        olds = strchr(token, '\0');
+    else
+    {
+        /* Terminate the token and make OLDS point past it.  */
+        *s = '\0';
+        olds = s + 1;
+    }
+    return (token);
+}
+
+/**
+ * tokenize_input - x
+ * @input: x
+ * @args: x
+ *
+ * Return: Always 0.
+ */
 void tokenize_input(char *input, char *args[])
 {
 	int arg_count = 0;
-	char *token = strtok(input, " \n");
+	char *token = _strtok(input, " \n");
 
 	while (token != NULL && arg_count < MAX_INPUT_SIZE - 1)
 	{
 		args[arg_count] = token;
 		arg_count++;
-		token = strtok(NULL, " \n");
+		token = _strtok(NULL, " \n");
 	}
 	args[arg_count] = NULL;
 }

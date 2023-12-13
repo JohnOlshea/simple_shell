@@ -23,5 +23,6 @@ void print_environment(void);
 int _putchar_err(char c);
 int print_string_err(char *str);
 void change_directory(char *directory);
+char *_strtok(char *s, const char *delim);
 
 #endif
