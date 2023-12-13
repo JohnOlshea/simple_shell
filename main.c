@@ -106,7 +106,8 @@ int main(void)
 				exit(0);
 		}
 		/* Free memory for tokens */
-		for (i = 0; args[i] != NULL; i++) {
+		for (i = 0; args[i] != NULL; i++)
+		{
 			free(args[i]);
 		}
 	}
@@ -229,7 +230,7 @@ void execute_with_fork(char *command, char *args[])
 
 			/*if (!isatty(0))*/
 				/*exit(EXIT_SUCCESS);*/
-		}		
+		}
 	}
 }
 
@@ -373,9 +374,9 @@ int print_string(char *str)
 
 
 /**
- * tokenize_input - x
- * @input: x
- * @args: x
+ * _strtok - x
+ * @s: x
+ * @delim: x
  *
  * Return: Always 0.
  */
