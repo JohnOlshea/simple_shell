@@ -8,5 +8,9 @@
 #include <errno.h>
 
 #define MAX_INPUT_SIZE 1024
+void custom_tokenize(char *input, char *args[]);
+void execute_command(char *args[]);
+void execute_directly(char *command, char *args[]);
+void execute_with_fork(char *command, char *args[]);
 
 #endif

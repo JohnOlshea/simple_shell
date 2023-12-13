@@ -6,6 +6,8 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+extern char **environ;
+
 /**
  * main - Simple shell
  *
@@ -46,12 +48,17 @@ int main(void)
 		/* Ignore comments (lines starting with '#') */
 
 		/* Tokenize the input */
+		custom_tokenize(input, args);
+
+		if (args[0] != NULL)
+		{
+			execute_command(args);
+		}
 
 		/* Check for the exit built-in command */
 
 		/* Check for the env built-in command */
 
-		printf("Shelly");
 
 		/* Free memory for tokens */
 		for (f_i = 0; args[f_i] != NULL; f_i++)
@@ -63,4 +70,104 @@ int main(void)
 	free(input);
 
 	return (0);
+}
+
+/**
+ * custom_tokenize - splits string into array
+ *
+ * @input: string to tokenize
+ * @args: tokenized array
+ *
+ * Return: Always 0.
+ */
+void custom_tokenize(char *input, char *args[])
+{
+	int arg_count = 0;
+	char *token = strtok(input, " \n");
+
+	while (token != NULL && arg_count < MAX_INPUT_SIZE - 1)
+	{
+		args[arg_count] = strdup(token);
+		if (args[arg_count] == NULL)
+		{
+			perror("strdup");
+			exit(EXIT_FAILURE);
+		}
+		arg_count++;
+		token = strtok(NULL, " \n");
+	}
+
+	/* Null-terminate the args array */
+	args[arg_count] = NULL;
+}
+
+/**
+ * execute_command - determines the command to execute
+ *
+ * @args: args array
+ *
+ * Return: Always 0.
+ */
+void execute_command(char *args[])
+{
+	if (args[0][0] == '/' || args[0][0] == '.')
+	{
+		execute_directly(args[0], args);
+	}
+	else
+	{
+		printf("bu");
+		/*execute_in_path(args[0], args);*/
+	}
+}
+
+/**
+ * execute_directly - Run if command is full path
+ *
+ * @command: full path Command to run
+ * @args: array of commands and probably flags
+ *
+ * Return: Always 0.
+ */
+void execute_directly(char *command, char *args[])
+{
+	execute_with_fork(command, args);
+}
+
+/**
+ * execute_with_fork - excutes the command
+ *
+ * @command: command to execute
+ * @args: array of commands and probably flags
+ *
+ * Return: Always 0.
+ */
+void execute_with_fork(char *command, char *args[])
+{
+	int status;
+	pid_t pid = fork();
+
+	if (pid < 0)
+	{
+		perror(command);
+		exit(EXIT_FAILURE);
+	}
+	else if (pid == 0)
+	{
+		/* Child process */
+		if (execve(command, args, environ) == -1)
+		{
+			fprintf(stderr, "%s: %d: %s: not found\n", command, getpid(), args[0]);
+			exit(EXIT_FAILURE);
+		}
+	}
+	else
+	{
+		/* Parent process */
+		if (wait(&status) == -1)
+		{
+			perror(command);
+			exit(EXIT_FAILURE);
+		}
+	}
 }
