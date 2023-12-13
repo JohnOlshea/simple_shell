@@ -17,4 +17,7 @@ int print_string(char *str);
 void execute_command(char *args[]);
 void tokenize_input(char *input, char *args[]);
 
+
+void print_environment(void);
+
 #endif

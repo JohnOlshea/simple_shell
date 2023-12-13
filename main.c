@@ -39,7 +39,28 @@ int main(void)
 
 		if (args[0] != NULL)
 		{
-			execute_command(args);
+			if (strcmp(args[0], "exit") == 0)
+			{
+				/* Free allocated memory before exiting */
+				free(input);
+
+				/* Check for exit status argument */
+				if (args[1] != NULL)
+				{
+					int exit_status = atoi(args[1]);
+
+					exit(exit_status);
+				}
+				else
+				{
+					exit(EXIT_SUCCESS);
+				}
+			}
+			/* Check for the env built-in command */
+			if (strcmp(args[0], "env") == 0)
+				print_environment();
+			else
+				execute_command(args);
 		}
 	}
 
@@ -82,6 +103,22 @@ void execute_with_fork(char *command, char *args[])
 	{
 		if (wait(&status) == -1)
 			exit(EXIT_FAILURE);
+	}
+}
+
+/**
+ * print_environment - print environment variable
+ *
+ * Return: Always 0.
+ */
+void print_environment(void)
+{
+	char **env_var = environ;
+
+	while (*env_var != NULL)
+	{
+		printf("%s\n", *env_var);
+		env_var++;
 	}
 }
 
