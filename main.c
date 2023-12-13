@@ -25,7 +25,7 @@ int main(void)
 	{
 		if (isatty(0))
 		{
-			write(STDOUT_FILENO, "($) ", 4);
+			write(STDOUT_FILENO, "#cisfun$ ", 9);
 			fflush(stdout);
 		}
 
@@ -33,8 +33,9 @@ int main(void)
 		{
 			if (isatty(0))
 				write(STDOUT_FILENO, "\n", 1);
-			perror("getline");
-			exit(EXIT_FAILURE);
+			/*perror("getline");*/
+			/*exit(EXIT_FAILURE);*/
+			return (1);
 		}
 
 		/* Remove trailing newline */
@@ -156,7 +157,8 @@ void execute_with_fork(char *command, char *args[])
 		/* Child process */
 		if (execve(command, args, environ) == -1)
 		{
-			fprintf(stderr, "%s: %d: %s: not found\n", command, getpid(), args[0]);
+			/*fprintf(stderr, "%s: %d: %s: not found\n", command, getpid(), args[0]);*/
+			write(STDERR_FILENO, "./shell: command not found\n", 28);
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -179,7 +181,7 @@ void execute_with_fork(char *command, char *args[])
  *
  * Return: Always 0.
  */
-void execute_in_path(char *command, char *args[])
+int execute_in_path(char *command, char *args[])
 {
 	char *path_env = getenv("PATH");
 	char *path_copy;
@@ -187,7 +189,7 @@ void execute_in_path(char *command, char *args[])
 
 	if (path_env == NULL)
 	{
-		fprintf(stderr, "%s: %s: not found\n", command, args[0]);
+		write(STDERR_FILENO, "./shell: No such file or directory\n", 36);
 		exit(EXIT_FAILURE);
 	}
 
@@ -196,7 +198,8 @@ void execute_in_path(char *command, char *args[])
 	if (path_copy == NULL)
 	{
 		perror(command);
-		exit(EXIT_FAILURE);
+		return (2);
+		/*exit(EXIT_FAILURE);*/
 	}
 
 	token = strtok(path_copy, ":");
@@ -205,20 +208,25 @@ void execute_in_path(char *command, char *args[])
 	{
 		char full_path[MAX_INPUT_SIZE];
 
-		snprintf(full_path, sizeof(full_path), "%s/%s", token, command);
+		/*snprintf(full_path, sizeof(full_path), "%s/%s", token, command);*/
+		/* Build full path */
+		strcpy(full_path, token);
+		strcat(full_path, "/");
+		strcat(full_path, command);		
 
 		if (access(full_path, X_OK) == 0)
 		{
 			execute_with_fork(full_path, args);
 			free(path_copy);
-			return;
+			return(0);
 		}
 
 		token = strtok(NULL, ":");
 	}
 
 	/* command not found */
-	fprintf(stderr, "%s: %s: not found\n", command, args[0]);
+	write(STDERR_FILENO, "./shell: No such file or directory\n", 36);
+	/*fprintf(stderr, "%s: %s: not found\n", command, args[0]);*/
 	free(path_copy);
-	exit(EXIT_FAILURE);
+	return (3);
 }
