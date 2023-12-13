@@ -6,12 +6,15 @@
 #include <sys/wait.h>
 #include <stdio.h>
 #include <errno.h>
+#include <string.h>
+#include <sys/types.h>
 
+extern char** environ;
 #define MAX_INPUT_SIZE 1024
-void custom_tokenize(char *input, char *args[]);
+
+int _putchar(char c);
+int print_string(char *str);
 void execute_command(char *args[]);
-void execute_directly(char *command, char *args[]);
-void execute_with_fork(char *command, char *args[]);
-int execute_in_path(char *command, char *args[]);
+void tokenize_input(char *input, char *args[]);
 
 #endif

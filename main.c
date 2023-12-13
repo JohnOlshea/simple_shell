@@ -1,3 +1,4 @@
+#include "main.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -5,7 +6,44 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#define MAX_INPUT_SIZE 1024
+/**
+ * main - Entry point
+ *
+ * Return: Always 0.
+ */
+int main(void)
+{
+	size_t input_size = 0;
+	ssize_t chars_read;
+	char *input = NULL;
+	char *args[MAX_INPUT_SIZE];
+
+	while (1)
+	{
+		if (isatty(0))
+		print_string("($) ");
+
+		chars_read = getline(&input, &input_size, stdin);
+		if (chars_read < 0)
+		{
+			if (isatty(0))
+			print_string("\n");
+			free(input);
+			exit(EXIT_FAILURE);
+		}
+
+		if (input[chars_read - 1] == '\n')
+			input[chars_read - 1] = '\0';
+
+		tokenize_input(input, args);
+
+		if (args[0] != NULL)
+			execute_command(args);
+	}
+
+	free(input);
+	return (0);
+}
 
 /**
  * _putchar - writes the character c to stdout
@@ -54,9 +92,17 @@ void execute_command(char *args[])
 	}
 	else if (pid == 0)
 	{
-		if (execve(args[0], args, NULL) == -1)
+		if (execve(args[0], args, environ) == -1)
 		{
-			perror("execve");
+			if (!isatty(0))
+			{
+				print_string("./hsh: 1: ");
+				print_string(args[0]);
+				print_string(": not found\n");
+				exit(127);
+			}
+
+			perror(args[0]);
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -85,44 +131,5 @@ void tokenize_input(char *input, char *args[])
 		arg_count++;
 		token = strtok(NULL, " \n");
 	}
-
 	args[arg_count] = NULL;
-}
-
-/**
- * main - Entry point
- *
- * Return: Always 0.
- */
-int main(void)
-{
-	char *input = NULL;
-	size_t input_size = 0;
-	ssize_t chars_read;
-	char *args[MAX_INPUT_SIZE];
-
-	while (1)
-	{
-		if (isatty(0))
-		print_string("($) ");
-
-		chars_read = getline(&input, &input_size, stdin);
-		if (chars_read < 0)
-		{
-			if (isatty(0))
-			print_string("\n");
-			free(input);
-			exit(EXIT_FAILURE);
-		}
-
-		if (input[chars_read - 1] == '\n')
-			input[chars_read - 1] = '\0';
-
-		tokenize_input(input, args);
-
-		if (args[0] != NULL)
-			execute_command(args);
-	}
-
-	return (0);
 }
