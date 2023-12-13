@@ -14,7 +14,8 @@ extern char** environ;
 
 int _putchar(char c);
 int print_string(char *str);
-void execute_command(char *args[]);
+void execute_with_fork(char *command, char *args[]);
+int execute_command(char *args[]);
 int execute_in_path(char *command, char *args[]);
 void tokenize_input(char *input, char *args[]);
 void set_environment_variable(char *variable, char *value);

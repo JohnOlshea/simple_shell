@@ -13,6 +13,7 @@
  */
 int main(void)
 {
+	int i;
 	size_t input_size = 0;
 	ssize_t chars_read;
 	char *input = NULL;
@@ -31,7 +32,7 @@ int main(void)
 		if (chars_read < 0)
 		{
 			if (isatty(0))
-			print_string("\n");
+				print_string("\n");
 			free(input);
 			exit(EXIT_FAILURE);
 		}
@@ -62,7 +63,7 @@ int main(void)
 				}
 				else
 				{
-					exit(EXIT_SUCCESS);
+					exit(0);
 				}
 			}
 			/* Check for the env built-in command */
@@ -99,9 +100,17 @@ int main(void)
 			else
 				execute_command(args);
 		}
+		else
+		{
+			if (!isatty(0))
+				exit(0);
+		}
+		/* Free memory for tokens */
+		for (i = 0; args[i] != NULL; i++) {
+			free(args[i]);
+		}
 	}
 
-	free(input);
 	return (0);
 }
 
@@ -173,7 +182,7 @@ void unset_environment_variable(char *variable)
  * @command: x
  * @args: x
  */
-int execute_with_fork(char *command, char *args[])
+void execute_with_fork(char *command, char *args[])
 {
 	int status;
 	pid_t pid = fork();
@@ -196,16 +205,32 @@ int execute_with_fork(char *command, char *args[])
 			}
 			perror(command);
 			print_string("./hsh: No such file or directorya\n");
-			return (127);
+			exit(127);
 		}
 	}
 	else
 	{
-		if (wait(&status) == -1)
+		if (waitpid(pid, &status, 0) == -1)
+		{
+			perror("waitpid");
 			exit(EXIT_FAILURE);
-	}
+		}
 
-	return (0);
+		if (WIFEXITED(status))
+		{
+			/*exit_status = WEXITSTATUS(status);*/
+
+			/*write(STDOUT_FILENO, "Exit status: ", 13);*/
+
+			/*char exit_status_str[4];*/
+			/*sprintf(exit_status_str, "%d", exit_status);*/
+			/*write(STDOUT_FILENO, exit_status_str, strlen(exit_status_str));*/
+			/*write(STDOUT_FILENO, "\n", 1);*/
+
+			/*if (!isatty(0))*/
+				/*exit(EXIT_SUCCESS);*/
+		}		
+	}
 }
 
 /**
@@ -299,7 +324,7 @@ void execute_directly(char *command, char *args[])
  * @args: array or argument and flags
  *
  */
-void execute_command(char *args[])
+int execute_command(char *args[])
 {
 	if (args[0][0] == '/' || args[0][0] == '.')
 	{
@@ -309,6 +334,11 @@ void execute_command(char *args[])
 	{
 		execute_in_path(args[0], args);
 	}
+
+	if (!isatty(0))
+		exit(0);
+	return (EXIT_SUCCESS);
+	/*exit(EXIT_SUCCESS);*/
 }
 
 /**
@@ -351,38 +381,30 @@ int print_string(char *str)
  */
 char *_strtok(char *s, const char *delim)
 {
-    static char *olds;
-    char *token;
+	static char *temps;
+	char *token;
 
-    if (s == NULL)
-        s = olds;
+	if (s == NULL)
+	s = temps;
 
-    /* Scan leading delimiters.  */
-    s += strspn(s, delim);
+	s += strspn(s, delim);
 
-    /* if *s points to the null byte \0, that means
-        we have reached the end of the string and
-        we return NULL
-    */
-    if (*s == '\0')
-    {
-        olds = s;
-        return (NULL);
-    }
+	if (*s == '\0')
+	{
+		temps = s;
+		return (NULL);
+	}
 
-    /* Find the end of the token.  */
-    token = s;
-    s = strpbrk(token, delim);
-    if (s == NULL)
-        /* This token finishes the string.  */
-        olds = strchr(token, '\0');
-    else
-    {
-        /* Terminate the token and make OLDS point past it.  */
-        *s = '\0';
-        olds = s + 1;
-    }
-    return (token);
+	token = s;
+	s = strpbrk(token, delim);
+	if (s == NULL)
+		temps = strchr(token, '\0');
+	else
+	{
+		*s = '\0';
+		temps = s + 1;
+	}
+	return (token);
 }
 
 /**
