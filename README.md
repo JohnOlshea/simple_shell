@@ -1,1 +1,2 @@
-#0x16. C - Simple Shell
+Simple Shell
+An lte versio of a unix command line interpreter.
