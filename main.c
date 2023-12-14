@@ -127,7 +127,7 @@ int execute_in_path(char *command, char *args[])
 	char *path_env = getenv("PATH");
 	char full_path[MAX_INPUT_SIZE];
 	char *token;
-	char *path_copy;
+	char path_copy[MAX_INPUT_SIZE];
 	int exit_status;
 
 	if (path_env == NULL)
@@ -136,7 +136,7 @@ int execute_in_path(char *command, char *args[])
 		exit(127);
 	}
 
-	path_copy = strdup(path_env);
+	strcpy(path_copy, path_env);
 
 	if (path_copy == NULL)
 	{
@@ -153,7 +153,6 @@ int execute_in_path(char *command, char *args[])
 	if (access(full_path, X_OK) == 0)
 	{
 		exit_status = execute_with_fork(full_path, args);
-		free(path_copy);
 		return (exit_status);
 	}
 
@@ -190,7 +189,7 @@ void custom_tokenize(char *input, char *args[])
 
 	while (token != NULL && arg_count < MAX_INPUT_SIZE - 1)
 	{
-		args[arg_count] = strdup(token);
+		args[arg_count] = token;
 		if (args[arg_count] == NULL)
 		{
 			perror("strdup");
@@ -258,6 +257,7 @@ int main(void)
 	int exit_status;
 	int exec_exit_status;
 	char *comment_start;
+	int i;
 
 	while (1)
 	{
@@ -366,6 +366,10 @@ int main(void)
 			if (!isatty(0))
 				return (0);
 		}
+		/* Free memory for tokens */
+		for (i = 0; args[i] != NULL; i++) {
+			free(args[i]);
+		}		
 	}
 
 	return (0);
