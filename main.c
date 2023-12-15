@@ -123,6 +123,61 @@ void print_environment(void)
 }
 
 /**
+ * set_environment_variable - Set environment variable
+ *
+ * @variable: varaible name
+ * @value: value to set
+ *
+ * Return: Always 0.
+ */
+void set_environment_variable(char *variable, char *value)
+{
+	if (setenv(variable, value, 1) == -1)
+	{
+		perror("setenv");
+		fprintf(stderr, "Failed to set environment variable %s\n", variable);
+	}
+}
+
+/**
+ * unset_environment_variable - Set environment variable
+ *
+ * @variable: varaible name
+ *
+ * Return: Always 0.
+ */
+void unset_environment_variable(char *variable)
+{
+	if (unsetenv(variable) == -1)
+	{
+		perror("unsetenv");
+		fprintf(stderr, "Failed to unset environment variable %s\n", variable);
+	}
+}
+
+
+/**
+ * change_directory - change directory
+ *
+ * @directory: directory to change into
+ *
+ * Return: Always 0.
+ */
+void change_directory(char *directory)
+{
+if (directory == NULL || strcmp(directory, "-") == 0)
+{
+	directory = getenv("HOME");
+
+	if (directory == NULL)
+		return;
+}
+
+	if (chdir(directory) == -1)
+		fprintf(stderr, "./hsh: 1: cd: can't cd to %s\n", directory);
+}
+
+/**
  * main - Simple shell
  *
  * Return: Always 0.
@@ -130,6 +185,7 @@ void print_environment(void)
 int main(void)
 {
 	char *command = NULL;
+	char *comment_start;
 	int num_read;
 	size_t n = 0;
 	char **argv = NULL;
@@ -137,6 +193,7 @@ int main(void)
 	int status;
 	int found_path;
 	int exit_status;
+	char **env = environ;
 
 	while (1)
 	{
@@ -156,6 +213,9 @@ int main(void)
 		}
 		command[strcspn(command, "\n")] = '\0';
 		/*exit*/
+comment_start = strchr(command, '#');
+if (comment_start != NULL)
+*comment_start = '\0';		
 
 		argv = tokenize(command, " \n\t");
 
@@ -178,13 +238,66 @@ int main(void)
 				}
 
 
-				if (strcmp(argv[0], "env") == 0)
+
+else if (strcmp(argv[0], "cd") == 0)
+{
+	change_directory(argv[1]);
+	continue;
+}
+
+
+			/* Check for the setenv built-in command */
+			else if (strcmp(argv[0], "setenv") == 0)
+			{
+				if (argv[1] != NULL && argv[2] != NULL)
 				{
-				print_environment();
-				continue;
-				if (!isatty(0))
-					return (0);
+					set_environment_variable(argv[1], argv[2]);
+					continue;
 				}
+				else
+				{
+					char error_message[] = "Usage: setenv VARIABLE VALUE\n";
+
+					write(STDERR_FILENO, error_message, sizeof(error_message) - 1);
+				}
+			}
+			/* Check for the unsetenv built-in command */
+			else if (strcmp(argv[0], "unsetenv") == 0)
+			{
+				if (argv[1] != NULL)
+				{
+					unset_environment_variable(argv[1]);
+					continue;
+				}
+				else
+				{
+					char error_message[] = "Usage: unsetenv VARIABLE\n";
+
+					write(STDERR_FILENO, error_message, sizeof(error_message) - 1);
+				}
+			}
+			else if (strcmp(argv[0], "cd") == 0)
+			{
+				change_directory(argv[1]);
+			}
+
+
+                        /* Check for the env built-in command */
+                        if (strcmp(argv[0], "env") == 0)
+                        {
+
+                                while (*env != NULL)
+                                {
+                                        printf("%s\n", *env);
+                                        env++;
+                                }
+
+                                if (!isatty(0))
+                                        return (0);
+                        }
+
+
+
 
 				found_path = construct_path(argv);
 				if (found_path != 0)
