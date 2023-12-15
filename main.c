@@ -212,10 +212,10 @@ int main(void)
 			return (EXIT_SUCCESS);
 		}
 		command[strcspn(command, "\n")] = '\0';
-		/*exit*/
-comment_start = strchr(command, '#');
-if (comment_start != NULL)
-*comment_start = '\0';		
+
+		comment_start = strchr(command, '#');
+		if (comment_start != NULL)
+		*comment_start = '\0';
 
 		argv = tokenize(command, " \n\t");
 
@@ -282,33 +282,33 @@ else if (strcmp(argv[0], "cd") == 0)
 			}
 
 
-                        /* Check for the env built-in command */
-                        if (strcmp(argv[0], "env") == 0)
-                        {
+			/* Check for the env built-in command */
+			if (strcmp(argv[0], "env") == 0)
+			{
 
-                                while (*env != NULL)
-                                {
-                                        printf("%s\n", *env);
-                                        env++;
-                                }
+			while (*env != NULL)
+			{
+				printf("%s\n", *env);
+				env++;
+			}
 
-                                if (!isatty(0))
-                                        return (0);
-                        }
-
-
+			if (!isatty(0))
+				return (0);
+			}
 
 
-				found_path = construct_path(argv);
-				if (found_path != 0)
+
+
+			found_path = construct_path(argv);
+			if (found_path != 0)
+			{
+				fprintf(stderr, "./hsh: 1: %s: not found\n", argv[0]);
+				if (!isatty(0))
 				{
-					fprintf(stderr, "./hsh: 1: %s: not found\n", argv[0]);
-					if (!isatty(0))
-					{
-						free(command);
-						free_tokens_array(argv);
-						return (127);
-					}
+					free(command);
+					free_tokens_array(argv);
+					return (127);
+				}
 				}
 			}
 			else
