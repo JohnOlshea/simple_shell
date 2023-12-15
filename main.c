@@ -7,6 +7,7 @@
 #include <sys/wait.h>
 
 #define MAX_INPUT_SIZE 1024
+#define MAX_PATH_LENGTH 4096
 
 extern char **environ;
 
@@ -28,6 +29,59 @@ void free_tokens_array(char **tokens)
 }
 
 /**
+ * construct_path - x
+ *
+ * @command: y
+ *
+ * Return: Always 0.
+ */
+
+int construct_path(char **command)
+{
+	char *path = getenv("PATH");
+	char full_path[MAX_PATH_LENGTH];
+	char *token;
+	char *original_command;
+
+	if (path == NULL || path[0] == '\0')
+		return (127);
+
+	original_command = strdup(command[0]);
+	if (original_command == NULL)
+	{
+		perror("Memory allocation error");
+		exit(EXIT_FAILURE);
+	}
+
+	token = strtok(path, ":");
+
+	while (token != NULL)
+	{
+		snprintf(full_path, sizeof(full_path), "%s/%s", token, original_command);
+
+		if (access(full_path, F_OK | X_OK) == 0)
+		{
+			free(original_command);
+
+			free(command[0]);
+			command[0] = strdup(full_path);
+			if (command[0] == NULL)
+			{
+				perror("Memory allocation error");
+				exit(EXIT_FAILURE);
+			}
+			return (EXIT_SUCCESS);
+		}
+
+		token = strtok(NULL, ":");
+	}
+
+	free(original_command);
+
+	return (EXIT_FAILURE);
+}
+
+/**
  * main - Simple shell
  *
  * Return: Always 0.
@@ -40,7 +94,7 @@ int main(void)
 	char **argv = NULL;
 	pid_t child_pid;
 	int status;
-	int j;
+	int found_path;
 
 	while (1)
 	{
@@ -54,26 +108,44 @@ int main(void)
 		if (num_read == -1)
 		{
 			if (isatty(0))
-			write(STDOUT_FILENO, "\n", 1);
+				write(STDOUT_FILENO, "\n", 1);
 			free(command);
 			return (EXIT_SUCCESS);
 		}
+		command[strcspn(command, "\n")] = '\0';
+		/*exit*/
 
 		argv = tokenize(command, " \n\t");
 
 		if (argv[0] != NULL)
 		{
-			if (access(argv[0], F_OK | X_OK) == -1)
+			/*built in*/
+			if (argv[0][0] != '/' && argv[0][0] != '.')
 			{
-				write(2, "Error: execve failed for command ", 33);
-				for (j = 0; argv[j] != NULL; ++j)
+				found_path = construct_path(argv);
+				if (found_path != 0)
 				{
-					write(2, argv[j], strlen(argv[j]));
-					write(2, " ", 1);
+					fprintf(stderr, "./hsh: 1: %s: not found\n", argv[0]);
+					if (!isatty(0))
+					{
+						free(command);
+						free_tokens_array(argv);
+						return (127);
+					}
 				}
-				write(2, "\n", 1);
-				free_tokens_array(argv);
-				continue;
+			}
+			else
+			{
+				if (access(argv[0], F_OK | X_OK) == -1)
+				{
+
+					fprintf(stderr, "./hsh: 1: %s: not found\n", argv[0]);
+					free_tokens_array(argv);
+					if (!isatty(0))
+						return (127);
+
+					continue;
+				}
 			}
 
 			child_pid = fork();
