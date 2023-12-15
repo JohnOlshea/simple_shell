@@ -82,6 +82,47 @@ int construct_path(char **command)
 }
 
 /**
+ * print_environment - Print environment variables in reverse order.
+ */
+void print_environment(void)
+{
+	char **env = environ;
+	char **env_array;
+	int count = 0;
+	int i;
+
+	/* Count the number of environment variables */
+	while (*env != NULL)
+	{
+		count++;
+		env++;
+	}
+
+	/* Allocate an array to store environment variables */
+	env_array = malloc((count + 1) * sizeof(char *));
+	if (env_array == NULL)
+	{
+		perror("Memory allocation error");
+		exit(EXIT_FAILURE);
+	}
+
+	/* Copy environment variables to the array */
+	env = environ;
+	for (i = 0; i < count; i++)
+	{
+		env_array[i] = *env;
+		env++;
+	}
+
+	env_array[count] = NULL;
+
+	for (i = count - 1; i >= 0; i--)
+		printf("%s\n", env_array[i]);
+
+	free(env_array);
+}
+
+/**
  * main - Simple shell
  *
  * Return: Always 0.
@@ -95,6 +136,7 @@ int main(void)
 	pid_t child_pid;
 	int status;
 	int found_path;
+	int exit_status;
 
 	while (1)
 	{
@@ -122,6 +164,28 @@ int main(void)
 			/*built in*/
 			if (argv[0][0] != '/' && argv[0][0] != '.')
 			{
+
+				if (strcmp(argv[0], "exit") == 0)
+				{
+					exit_status = 0;
+
+					if (argv[1] != NULL)
+						exit_status = atoi(argv[1]);
+
+					free(command);
+					free_tokens_array(argv);
+					return (exit_status);
+				}
+
+
+				if (strcmp(argv[0], "env") == 0)
+				{
+				print_environment();
+				continue;
+				if (!isatty(0))
+					return (0);
+				}
+
 				found_path = construct_path(argv);
 				if (found_path != 0)
 				{
